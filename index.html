@@ -1735,5 +1735,134 @@ HTMLCanvasElement.prototype.toDataURL = function (...args) {
         sync();
       })();
     </script>
+	<!-- NET BACKGROUND
+     Paste this whole block right before the closing </body> tag.
+     It hides the old fog and draws an animated net of connected dots instead. -->
+<style>
+    .fog { display: none !important; }
+    body.dark-mode {
+        background: radial-gradient(ellipse at 20% 0%, #1e3a8a 0%, #0b1f4d 45%, #050d24 100%) fixed !important;
+    }
+    body:not(.dark-mode) {
+        background: radial-gradient(ellipse at 20% 0%, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%) fixed !important;
+    }
+    #netBg {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+    }
+</style>
+<canvas id="netBg" aria-hidden="true"></canvas>
+<script>
+(function () {
+    const canvas = document.getElementById('netBg');
+    const ctx = canvas.getContext('2d');
+    const viewer = document.getElementById('zoneViewer');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const LINK_DIST = 140;      // max distance for two dots to connect
+    const MOUSE_DIST = 180;     // how far the cursor reaches
+    const DENSITY = 9000;       // px² per dot (lower = more dots)
+    const SPEED = 0.35;
+
+    let w, h, dpr, dots = [];
+    const mouse = { x: -9999, y: -9999 };
+
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = window.innerWidth;
+        h = window.innerHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const count = Math.min(160, Math.round((w * h) / DENSITY));
+        while (dots.length < count) {
+            dots.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * SPEED * 2,
+                vy: (Math.random() - 0.5) * SPEED * 2,
+                r: Math.random() * 1.4 + 0.8,
+                hot: Math.random() < 0.12   // a few dots glow cyan
+            });
+        }
+        dots.length = count;
+    }
+
+    function draw() {
+        const dark = document.body.classList.contains('dark-mode');
+        const line = dark ? '125,180,255' : '37,99,235';
+        const accent = '56,189,248';
+
+        ctx.clearRect(0, 0, w, h);
+
+        for (let i = 0; i < dots.length; i++) {
+            const a = dots[i];
+
+            for (let j = i + 1; j < dots.length; j++) {
+                const b = dots[j];
+                const dx = a.x - b.x, dy = a.y - b.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 < LINK_DIST * LINK_DIST) {
+                    const alpha = (1 - Math.sqrt(d2) / LINK_DIST) * 0.35;
+                    ctx.strokeStyle = `rgba(${line},${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+            }
+
+            // lines from the cursor to nearby dots
+            const mx = a.x - mouse.x, my = a.y - mouse.y;
+            const md = Math.sqrt(mx * mx + my * my);
+            if (md < MOUSE_DIST) {
+                ctx.strokeStyle = `rgba(${accent},${(1 - md / MOUSE_DIST) * 0.7})`;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(mouse.x, mouse.y);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = a.hot ? `rgba(${accent},0.9)` : `rgba(${line},0.8)`;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function step() {
+        for (const d of dots) {
+            d.x += d.vx;
+            d.y += d.vy;
+            if (d.x < 0 || d.x > w) d.vx *= -1;
+            if (d.y < 0 || d.y > h) d.vy *= -1;
+        }
+    }
+
+    function loop() {
+        // don't compete with a game while one is open
+        const gameOpen = viewer && viewer.style.display === 'block';
+        if (!gameOpen) {
+            if (!reduceMotion) step();
+            draw();
+        }
+        requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; });
+
+    resize();
+    loop();
+})();
+</script>
 </body>
 </html>
