@@ -1757,6 +1757,100 @@ HTMLCanvasElement.prototype.toDataURL = function (...args) {
 </style>
 <canvas id="netBg" aria-hidden="true"></canvas>
 <script>
+<!-- NET BACKGROUND
+     Paste this whole block right before the closing </body> tag.
+     It hides the old fog and draws an animated net of connected dots instead. -->
+<style>
+    .fog { display: none !important; }
+    body.dark-mode {
+        background: radial-gradient(ellipse at 20% 0%, #1e3a8a 0%, #0b1f4d 45%, #050d24 100%) fixed !important;
+    }
+    body:not(.dark-mode) {
+        background: radial-gradient(ellipse at 20% 0%, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%) fixed !important;
+    }
+    #netBg {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    /* ---------- Cooler header ---------- */
+    header {
+        background: linear-gradient(180deg, rgba(8, 20, 52, 0.82), rgba(8, 20, 52, 0.55)) !important;
+        color: #e6f0ff !important;
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border-bottom: 1px solid rgba(96, 165, 250, 0.22);
+        box-shadow: 0 10px 30px rgba(0, 10, 40, 0.45), inset 0 1px 0 rgba(147, 197, 253, 0.15);
+    }
+    header::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; bottom: -1px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #38bdf8, #60a5fa, #38bdf8, transparent);
+        background-size: 200% 100%;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+        animation: headerGlow 6s linear infinite;
+        pointer-events: none;
+    }
+    @keyframes headerGlow {
+        from { background-position: 0% 0; }
+        to { background-position: 200% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        header::after { animation: none; }
+    }
+
+    .logo {
+        background: linear-gradient(90deg, #e0f2fe 0%, #38bdf8 50%, #60a5fa 100%) !important;
+        -webkit-background-clip: text !important;
+        background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5));
+        letter-spacing: -0.01em;
+    }
+
+    #searchBar, #sortOptions, #filterOptions {
+        background: rgba(255, 255, 255, 0.07) !important;
+        color: #e6f0ff !important;
+        border: 1px solid rgba(125, 180, 255, 0.25) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    #searchBar::placeholder { color: rgba(200, 220, 255, 0.55); }
+    #searchBar:focus {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), 0 0 18px rgba(56, 189, 248, 0.35) !important;
+        transform: none;
+    }
+    #sortOptions:hover, #filterOptions:hover {
+        background: rgba(255, 255, 255, 0.13) !important;
+        color: #ffffff !important;
+        border-color: rgba(56, 189, 248, 0.6) !important;
+    }
+    #sortOptions option, #filterOptions option {
+        background: #0b1f4d;
+        color: #e6f0ff;
+    }
+
+    .control-buttons button {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(125, 180, 255, 0.25) !important;
+    }
+    .control-buttons button:hover {
+        background: rgba(56, 189, 248, 0.18) !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+    }
+    .control-button img { filter: brightness(0) invert(1) !important; }
+</style>
+<canvas id="netBg" aria-hidden="true"></canvas>
+<script>
 (function () {
     const canvas = document.getElementById('netBg');
     const ctx = canvas.getContext('2d');
